@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 //Project 1
 //Max Forbang and Martin Quezada
@@ -44,8 +45,17 @@ int main(int argc, char *argv[]) {
 	int numberOfEntries = lseek(mapFD, 0, SEEK_END) / 16;
 	lseek(mapFD, 0, SEEK_SET);
 
-	//creating buffer to store actual data from input file
+	//creating buffer and file descriptor to store data from input file
 	char buffer[4096];
+	int fd = 0;
+	
+	//creating data structure to store file names and their corresponding file descriptors
+	int maxFiles = 8;
+	int numFiles = 0;
+	char fileNames[maxFiles][13];
+	int fds[maxFiles];
+	bool flag = false;
+	
 	
 	//Iterate through each entry in map file
 	for (int i = 0; i < numberOfEntries; i++){
@@ -57,13 +67,58 @@ int main(int argc, char *argv[]) {
 		strncpy(fileName, entryBuffer, 12);
 		offset = (int)entryBuffer[12];
 		
-		//open file at current entry or create it if it does not exist
-		int fd = open(fileName, O_WRONLY | O_CREAT, 0666);
-		if (fd == -1) {
-			printf("Opening of file %s failed: %s\n", fileName, strerror(errno));
-            exit(1);
-        }
-
+		//Check if file has been opened. If so, set flag 				
+		for (int j = 0; j < numFiles; j++)
+		{
+			if (strcmp(fileNames[i], fileName) == 0) flag = true;
+			
+		}
+		
+		//Opens file only if flag is set to false (this entry's file has not been opened yet)
+		if (flag == false)
+		{
+			//open file at current entry or create it if it does not exist
+			fd = open(fileName, O_WRONLY | O_CREAT, 0666);
+			if (fd == -1) {
+				printf("Opening of file %s failed: %s\n", fileName, strerror(errno));
+				exit(1);
+			}
+			
+			//Resize file name and file descriptor arrays if they're full
+			if (numFiles == maxFiles)
+			{
+				maxFiles *= 2;
+				char temp[maxFiles][13];
+				int temp2[maxFiles];
+				
+				for (int x = 0; x < numFiles; x++)
+				{
+					memcpy(temp[x], fileNames[x], 13);
+					temp2[x] = fds[x];
+				}
+				
+				char fileNames[maxFiles][13];
+				int fds[maxFiles];
+				
+				fds[0] += 0; //Useless code to avoid extraneous "fds set but not used" compiler warning even though fds is used.
+				
+				for (int y = 0; y < numFiles; y++)
+				{
+					memcpy(fileNames[y], temp[y], 13);
+					fds[y] = temp2[y];
+				}
+				
+				
+			}
+			
+			//add file to list of fileNames
+			strncpy(fileNames[numFiles], fileName, 12);
+			fds[numFiles] = fd;
+			numFiles++;
+		}
+		
+		//reset flag for next entry
+		flag = false;
 
 		//Seek correct positions in input and output files
 		lseek(fd, offset * CLUSTER_SIZE, SEEK_SET);
@@ -76,15 +131,19 @@ int main(int argc, char *argv[]) {
 		//Write from buffer into output file
 		write(fd, buffer, CLUSTER_SIZE);
 		
-		close(fd);
-		
-		//test printf to see if variables have the right values from map file
-		printf("%s: %d\n", fileName, offset);
 	}
 		 
-
+	
+	
+	//Close all files
+	for (int i = 0; i < numFiles; i++)
+	{
+		close(fds[i]);
+	}
+	
 	close(mapFD);
 	close(inputFD);
+	
 	
 
 }
