@@ -44,19 +44,61 @@ int main(int argc, char *argv[])
         assert(bytes_read == CLUSTER_SIZE);
         classification = TYPE_UNCLASSIFIED;
         
-		
+		//JPG CODE
 		if(has_jpg_header(cluster_data) != 0) {
 			if(has_jpg_footer(cluster_data) != 0){
-				classification = TYPE_IS_JPG | TYPE_JPG_HEADER | TYPE_JPG_FOOTER;
+				classification = TYPE_IS_JPG | TYPE_JPG_HEADER | TYPE_JPG_FOOTER; //JHF
 			}
-			
+			else
+            {
 			classification = TYPE_IS_JPG | TYPE_JPG_HEADER;
-			
+			}
 		}
-		
-		
-		
-		
+        else if(has_jpg_body(cluster_data) != 0) //incase cluster does not have a header min 26
+        {
+            if(has_jpg_footer(cluster_data) != 0)
+            {
+                classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;
+            }
+            else
+            {
+                classification = TYPE_IS_JPG;
+            }
+        }
+        else if(has_jpg_footer(cluster_data) != 0)
+        {
+            classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;
+        }
+
+
+        //HTML CODE
+        if(has_html_header(cluster_data) != 0)
+        {
+            if(has_html_footer(cluster_data) != 0)
+            {
+                classification = TYPE_IS_HTML | TYPE_HTML_HEADER | TYPE_HTML_FOOTER;//HHF
+            }
+            else
+            {
+            classification = TYPE_IS_HTML | TYPE_HTML_HEADER;
+            }
+        }
+        else if(has_html_body(cluster_data) != 0) //incase cluster does not have a header min 26
+        {
+            if(has_html_footer(cluster_data) != 0)
+            {
+                classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;
+            }
+            else
+            {
+                classification = TYPE_IS_HTML;
+            
+            }
+        }
+        else if(has_html_footer(cluster_data) != 0)
+        {
+            classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;
+        }
 			
 				
         /*
@@ -75,7 +117,7 @@ int main(int argc, char *argv[])
 
     // Try opening the classification file for reading, exit with appropriate
     // error message if open fails 
-	
+	classification_fd = open(CLASSIFICATION_FILE, O_RDONLY);
 	
      // Instead of opening this file here, you may elect to open it before the classifier loop in read/write mode
 	 
@@ -99,14 +141,18 @@ int main(int argc, char *argv[])
         
 		
 		//If jpg fileName needs to be created
+        //EVERY TIME YOU SEE A HEADER YOU NEED TO RESET THE OFFSET, CREATE A MAP ENTRY, CREATE NEW FILE NAME - PROFESSOR
+        if((cluster_type & TYPE_JPG_HEADER) == 2)
+        {
 			snprintf(jName, 13, "File%04d.jpg", jFileNumber);
 			jFileNumber++;
-			
+		}
 		//if (cluster_type & TYPE_IS_JPG == 1)
+        //{
 			write(map_fd, jName, 12);
 			write(map_fd, &jOffset, 4);
 			jOffset++;
-			
+	    //}
 			
 		
 			
@@ -115,11 +161,15 @@ int main(int argc, char *argv[])
 		
 		
 		//If html fileName needs to be created
+        //EVERYTIME YOU SEE A HEADER YOU NEED TO RESET THE OFFSET, CREATE A MAP ENTRY, CREATE A NEW FILE NAME- PROFESSOR
+        //if((cluster_type & TYPE_HTML_HEADER) == 16)
+        //{
 			//snprintf(hName, 13, "File%04d.jpg", hFileNumber);
 			//hFileNumber++;
+        //}
 		
 		/*
-		if (classification & TYPE_IS_HTML == 1)	
+		if (classification & TYPE_IS_HTML == 8)	
 			write(map_fd, jName, 12);
 			write(map_fd, &jOffset, 4);
 			jOffset++;
