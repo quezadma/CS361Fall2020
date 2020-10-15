@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 		//If jpg fileName needs to be created
 			//snprintf(jName, 13, "File%04d.jpg", jFileNumber);
 			//jFileNumber++;
-		if (classification & TYPE_JPG == 1)
+		if (classification & TYPE_IS_JPG == 1)
 		{
 			write(map_fd, jName, 12);
 			write(map_fd, &jOffset, 4);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 		//If html fileName needs to be created
 			//snprintf(hName, 13, "File%04d.jpg", hFileNumber);
 			//hFileNumber++;
-		if (classification & TYPE_HTML == 1)	
+		if (classification & TYPE_IS_HTML == 1)	
 		{
 			write(map_fd, jName, 12);
 			write(map_fd, &jOffset, 4);
