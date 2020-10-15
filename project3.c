@@ -90,22 +90,43 @@ int main(int argc, char *argv[])
 	printf("test");
 
 	
-	char hName[12]; char jName[12];		//Buffer for file namespace
+	char hName[13]; char jName[13];		//Buffer for file namespace
 	int hOffset = 0; int jOffset = 0;	//Offsets for different file types
+	int jFileNumber = 1; int hFileNumber = 1; 
 	
     // Iterate over each cluster, reading in the cluster type attributes
     while ((bytes_read = read(classification_fd, &cluster_type, 1)) > 0) {
         
-		//if (classification & TYPE_JPG_HEADER == 1)
-			write(map_fd, "File0001.jpg", 12);
+		
+		//If jpg fileName needs to be created
+			//snprintf(jName, 13, "File%04d.jpg", jFileNumber);
+			//jFileNumber++;
+		if (classification & TYPE_JPG == 1)
+		{
+			write(map_fd, jName, 12);
 			write(map_fd, &jOffset, 4);
+			jOffset++;
+			
+			
+		}
+			
+			
+			
 		
 		
-		/*
-            In this loop, you need to implement the functionality of the
-            mapper. For each cluster, a map entry needs to be created and
-            written to the map file.
-        */
+		//If html fileName needs to be created
+			//snprintf(hName, 13, "File%04d.jpg", hFileNumber);
+			//hFileNumber++;
+		if (classification & TYPE_HTML == 1)	
+		{
+			write(map_fd, jName, 12);
+			write(map_fd, &jOffset, 4);
+			jOffset++;
+			
+		}
+			
+			
+		
     }
     
     close(classification_fd);
