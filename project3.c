@@ -1,4 +1,3 @@
-/* project3.c */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -9,6 +8,10 @@
 
 #include "common.h"
 #include "classify.h"
+
+//Project 3
+//Max Forbang and Martin Quezada
+//This work abides by the JMU Honor Code.
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +33,7 @@ int main(int argc, char *argv[])
     // if open fails
     input_fd = open(argv[1], O_RDONLY);
     if (input_fd < 0) {
-        printf("AAAError opening file \"%s\" for reading: %s\n", argv[1], strerror(errno));
+        printf("Error opening file \"%s\" for reading: %s\n", argv[1], strerror(errno));
         return 1;
     }
     
@@ -49,66 +52,40 @@ int main(int argc, char *argv[])
 			if(has_jpg_footer(cluster_data) != 0){
 				classification = TYPE_IS_JPG | TYPE_JPG_HEADER | TYPE_JPG_FOOTER; //JHF
 			}
-			else
-            {
-			classification = TYPE_IS_JPG | TYPE_JPG_HEADER;
+			else {
+				classification = TYPE_IS_JPG | TYPE_JPG_HEADER;		//JHEADER
 			}
 		}
-        else if(has_jpg_body(cluster_data) != 0) //incase cluster does not have a header min 26
+        else if(has_jpg_footer(cluster_data) != 0) 
         {
-            if(has_jpg_footer(cluster_data) != 0)
-            {
-                classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;
-            }
-            else
-            {
-                classification = TYPE_IS_JPG;
-            }
+            classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;		//JFOOTER
+            
         }
-        else if(has_jpg_footer(cluster_data) != 0)
-        {
-            classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;
+        else if(has_jpg_body(cluster_data) != 0) {
+            classification = TYPE_IS_JPG; 		//JONLY
         }
 
 
         //HTML CODE
-        if(has_html_header(cluster_data) != 0)
+        if(has_html_header(cluster_data) != 0) {
+			if(has_html_footer(cluster_data) != 0){
+				classification = TYPE_IS_HTML | TYPE_HTML_HEADER | TYPE_HTML_FOOTER; //HHF
+			}
+			else {
+				classification = TYPE_IS_HTML | TYPE_HTML_HEADER;		//HHEADER
+			}
+		}
+        else if(has_html_footer(cluster_data) != 0) 
         {
-            if(has_html_footer(cluster_data) != 0)
-            {
-                classification = TYPE_IS_HTML | TYPE_HTML_HEADER | TYPE_HTML_FOOTER;//HHF
-            }
-            else
-            {
-            classification = TYPE_IS_HTML | TYPE_HTML_HEADER;
-            }
-        }
-        else if(has_html_body(cluster_data) != 0) //incase cluster does not have a header min 26
-        {
-            if(has_html_footer(cluster_data) != 0)
-            {
-                classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;
-            }
-            else
-            {
-                classification = TYPE_IS_HTML;
+            classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;		//HFOOTER
             
-            }
         }
-        else if(has_html_footer(cluster_data) != 0)
-        {
-            classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;
+        else if(has_html_body(cluster_data) != 0) {
+            classification = TYPE_IS_HTML; 		//HONLY
         }
 			
-				
-        /*
-            In this loop, you need to implement the functionality of the
-            classifier. Each cluster needs to be examined using the functions
-            provided in classify.c. Then for each cluster, the attributes
-            need to be written to the classification file.
-        */
         
-        printf("Processing cluster %06d\n", cluster_number); // This line needs to be removed in your final submission
+        //printf("Processing cluster %06d, classification type: %d\n", cluster_number, classification); // This line needs to be removed in your final submission
         write(classification_fd, &classification, 1);
         cluster_number++;
     }
@@ -118,69 +95,62 @@ int main(int argc, char *argv[])
     // Try opening the classification file for reading, exit with appropriate
     // error message if open fails 
 	classification_fd = open(CLASSIFICATION_FILE, O_RDONLY);
-	
-     // Instead of opening this file here, you may elect to open it before the classifier loop in read/write mode
-	 
+		 
     if (classification_fd < 0) {
-        printf("BBBError opening file \"%s\": %s\n", "classificiation", strerror(errno));
+        printf("Error opening file \"%s\": %s\n", "classificiation", strerror(errno));
         return 1;
     }
     
-	
-	lseek(classification_fd, 0, SEEK_SET);	
-	int map_fd = open("map", O_WRONLY | O_CREAT, 0666);	
-	printf("test");
-
-	
+	lseek(classification_fd, 0, SEEK_SET);	//Seek to beginning of classification file						
+	int map_fd = open("map", O_WRONLY | O_CREAT, 0666);		//Create map file
 	char hName[13]; char jName[13];		//Buffer for file namespace
 	int hOffset = 0; int jOffset = 0;	//Offsets for different file types
-	int jFileNumber = 1; int hFileNumber = 1; 
+	int jFileNumber = 1; int hFileNumber = 1; //Number of file being written, starts at 1
 	
     // Iterate over each cluster, reading in the cluster type attributes
     while ((bytes_read = read(classification_fd, &cluster_type, 1)) > 0) {
-        
-		
-		//If jpg fileName needs to be created
-        //EVERY TIME YOU SEE A HEADER YOU NEED TO RESET THE OFFSET, CREATE A MAP ENTRY, CREATE NEW FILE NAME - PROFESSOR
-        if((cluster_type & TYPE_JPG_HEADER) == 2)
-        {
-			snprintf(jName, 13, "File%04d.jpg", jFileNumber);
-			jFileNumber++;
-		}
-		//if (cluster_type & TYPE_IS_JPG == 1)
-        //{
-			write(map_fd, jName, 12);
-			write(map_fd, &jOffset, 4);
-			jOffset++;
-	    //}
 			
-		
-			
-			
-			
-		
-		
-		//If html fileName needs to be created
-        //EVERYTIME YOU SEE A HEADER YOU NEED TO RESET THE OFFSET, CREATE A MAP ENTRY, CREATE A NEW FILE NAME- PROFESSOR
-        //if((cluster_type & TYPE_HTML_HEADER) == 16)
-        //{
-			//snprintf(hName, 13, "File%04d.jpg", hFileNumber);
-			//hFileNumber++;
-        //}
-		
-		/*
-		if (classification & TYPE_IS_HTML == 8)	
-			write(map_fd, jName, 12);
-			write(map_fd, &jOffset, 4);
-			jOffset++;
-		*/
-			
-			
-			
-		
-    }
-    
-    close(classification_fd);
+		if ((cluster_type & TYPE_IS_JPG) == 1) {
 
+			if((cluster_type & TYPE_JPG_HEADER) == 2) 	//JHF or JHEADER
+			{
+				snprintf(jName, 13, "File%04d.jpg", jFileNumber);
+				jFileNumber++;
+				jOffset = 0;
+				writeMapEntry(map_fd, jName, &jOffset);
+			}	
+			else {
+				writeMapEntry(map_fd, jName, &jOffset);		//JFOOTER or JONLY
+			}
+		}
+		else if ((cluster_type & TYPE_IS_HTML) == 8) {
+				
+			if((cluster_type & TYPE_HTML_HEADER) == 16) 	//HHF or HHEADER
+			{
+				snprintf(hName, 13, "File%04d.htm", hFileNumber);
+				hFileNumber++;
+				hOffset = 0;
+				
+				writeMapEntry(map_fd, hName, &hOffset);
+			}	
+			else {
+				writeMapEntry(map_fd, hName, &hOffset);		//HFOOTER or HONLY
+			}
+		}
+			
+    }
+	
+    close(classification_fd);
+	
     return 0;
 };
+
+//Write a map entry
+	void writeMapEntry(int mapFD, char* name, int* offset) {
+			write(mapFD, name, 12);
+			write(mapFD, offset, 4);
+			*offset += 1;
+	}
+
+
+
