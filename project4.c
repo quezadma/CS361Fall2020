@@ -61,6 +61,18 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+
+
+    // Try opening the file for reading, exit with appropriate error message
+    // if open fails
+    input_fd = open(argv[1], O_RDONLY);
+    if (input_fd < 0) {
+        printf("Error opening file \"%s\" for reading: %s\n", argv[1], strerror(errno));
+        return 1;
+    }
+
+
+
     // Create the pipe here. Exit with error if this fails.
     if( pipe(fd_pipe) < 0)
     {
@@ -68,7 +80,31 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-            
+    //method of getting the number of clusters there are
+    int counter =0;
+    while ((bytes_read = read(input_fd, &cluster_data, CLUSTER_SIZE)) > 0) 
+    {    
+        counter++;
+    }
+
+
+    //block to see if theres an even number of clusters for procecesses
+    //can use the flag in an if statement when sending messages to add an 
+    //extra cluster to a process if needed
+    int num = counter %5;
+    bool even = true;
+    if(num != 0)
+    {
+        even = false;
+    }
+
+    //write info child needs to read. still needs to get the info from input file.
+    //Loop may need to go somewhere else
+    for(int i =0; i < NUM_PROCESSES; i++)
+    {
+        write(fd_pipe[1], &msg, sizeof(msg));
+        wait(10);
+    } 
 
 
     // The pipe must be created at this point
