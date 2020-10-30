@@ -1,7 +1,7 @@
 /* project4.c
 
-Team: 
-Names: 
+Team:   
+Names: Martin Quezada 
 Honor code statement: 
 
 */
@@ -76,36 +76,23 @@ int main(int argc, char *argv[])
     // Create the pipe here. Exit with error if this fails.
     if( pipe(fd_pipe) < 0)
     {
-        printf("Error creating pipe");
-        exit(1);
+        printf("Error creating pipe", strerror(errno));
+        return 1;
     }
 
-    //method of getting the number of clusters there are
-    int counter =0;
+    //method of getting the number of clusters in input file
+    int counter = 0;
     while ((bytes_read = read(input_fd, &cluster_data, CLUSTER_SIZE)) > 0) 
     {    
         counter++;
-    }
-
-
-    //block to see if theres an even number of clusters for procecesses
-    //can use the flag in an if statement when sending messages to add an 
-    //extra cluster to a process if needed
-    int num = counter %5;
-    bool even = true;
-    if(num != 0)
-    {
-        even = false;
-    }
-
-    //write info child needs to read. still needs to get the info from input file.
-    //Loop may need to go somewhere else
-    for(int i =0; i < NUM_PROCESSES; i++)
-    {
-        write(fd_pipe[1], &msg, sizeof(msg));
-        wait(10);
     } 
 
+    
+
+    //creating variables to use for children logic
+    int num = counter % NUM_PROCESSES;
+    int clusters_per_child = counter / NUM_PROCESSES;    
+    start_cluster = 0;
 
     // The pipe must be created at this point
 #ifdef GRADING // do not delete this or you will lose points
@@ -115,6 +102,14 @@ int main(int argc, char *argv[])
 
     // Fork NUM_PROCESS number of child processes
     for (int i = 0; i < NUM_PROCESSES; i++) {
+
+
+        if( num != 0 )
+        {
+            clusters_to_process = clusters_per_child + 1;
+            num--;       
+        }
+
 
         pid = fork();
         // Exit if fork() fails.
@@ -127,16 +122,10 @@ int main(int argc, char *argv[])
             // for the child processes to be aware of which clusters
             // they need to process, classify them, and create a message
             // for each cluster to be written to the pipe.
+            
 
 
-            //not sure if this is right
-            //read info sent from parent and then close reading pipe-AQ
-            read(fd_pipe[0], &msg, sizeof(msg));
-            start_cluster = msg.msg_cluster_number;
-            //clusters_to_process = msg.msg_cluster_type;
-            close(fd_pipe[0]);
-            
-            
+            //message.msg_cluster_number =         
 
             // At this point, the child must know its start cluster and
             // the number of clusters to process.
@@ -155,7 +144,16 @@ int main(int argc, char *argv[])
 
 
             // Implement the main loop for the child process below this line
-            write(fd_pipe[1]),
+            close(fd_pipe[0]);
+
+
+            for(int i =0; i < clusters_to_process; i++)
+            {
+                write(fd_pipe[1], &message, sizeof(message));
+            }
+            
+            close(fd_pipe[1]);
+           
             exit(0); // This line needs to be the last one for the child
                      // process code. Do not delete this!
         }
