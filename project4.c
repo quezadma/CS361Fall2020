@@ -86,9 +86,8 @@ int main(int argc, char *argv[])
 	//getting number of clusters from size of the file
     int fileSize, numClusters;
 	
-	fseek(input_fd, 0, SEEK_END);
-	fileSize = ftell(input_fd);
-	fseek(input_fd, 0, SEEK_SET);
+	fileSize = lseek(input_fd, 0, SEEK_END);
+	lseek(input_fd, 0, SEEK_SET);
 	
 	numClusters = fileSize / CLUSTER_SIZE;
 
@@ -129,17 +128,14 @@ int main(int argc, char *argv[])
             exit(1);
         // This is the place to write the code for the child processes
         else if (pid == 0) {
-			
+			printf("%d\n", start_cluster);
+			printf("%d\n", clusters_to_process);
+
 			// In this else if block, you need to implement the entire logic
             // for the child processes to be aware of which clusters
             // they need to process, classify them, and create a message
             // for each cluster to be written to the pipe.
 			
-			
-            
-          
-			
-                    
 
             // At this point, the child must know its start cluster and
             // the number of clusters to process.
@@ -161,7 +157,7 @@ int main(int argc, char *argv[])
             // Implement the main loop for the child process below this line
 			
 			
-			fseek(input_fd, start_cluster * CLUSTER_SIZE, SEEK_SET);
+			lseek(input_fd, start_cluster * CLUSTER_SIZE, SEEK_SET);
 
             for(int j = 0; j < clusters_to_process; j++)
             {
@@ -241,12 +237,13 @@ int main(int argc, char *argv[])
         // each message sent by a child process. Based on the content,
         // a proper entry in the classification file needs to be written.
 		
-		fseek(classification_fd, message.msg_cluster_number * CLUSTER_SIZE, SEEK_SET);
-		write(classification_fd, message.msg_cluster_type, 1);
-		close(pipefd[0]);
+		lseek(classification_fd, message.msg_cluster_number, SEEK_SET);
+		write(classification_fd, &message.msg_cluster_type, 1);
+		
     }
-
+	close(pipefd[0]);
     close(classification_fd); // close the file descriptor for the
                               // classification file
     return 0;
 };
+
