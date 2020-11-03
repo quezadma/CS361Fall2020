@@ -21,13 +21,23 @@ struct msg {
 
 int main (int argc, char *argv[])
 {
+    struct msg m;
     mqd_t mqd = open("/cs361lab2", O_CREAT | O_RONLY, 0600, NULL);
 
     if(mqd < 0)
     {
         fprintf("MQD UNSUCCESSFUL", strerror(errno));
         exit(1);
-    }   
+    }
+   
+        struct mq_attr attr;
+    char *buffer = calloc (attr.mq_msgsize, 1);
+
+    if((mq_receive (mqd, buffer, attr.mq_msgsize, NULL)) ! = -1)
+    {
+        struct msg *m = (struct msg *) buffer;
+        //retrieve message fields here
+    }
 
 
     //still need to find out where we get the arguments for the Queue output
