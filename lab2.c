@@ -21,6 +21,7 @@ struct msg {
 
 int main (int argc, char *argv[])
 {
+    char *name = "/cs361lab2";
     struct msg *m;
     mqd_t mqd = open("/cs361lab2", O_CREAT | O_RONLY, 0600, NULL);
 
@@ -51,7 +52,7 @@ int main (int argc, char *argv[])
 
 
     //still need to find out where we get the arguments for the Queue output
-    fprintf("Queue %s:\n\t Flags:\t%s\n\tMax messagesses:\t%d\n\tMax size:\t%d\n\tCurrent messages:%\td", );
+    fprintf("Queue %s:\n\t Flags:\t%s\n\tMax messagesses:\t%d\n\tMax size:\t%d\n\tCurrent messages:%\td", name, attr.mq_flags, attr.mq_maxmsg, attr.mq_msgsize, attr.mq_curmsgs);
     
  
     //still need to get arguments from struct. need the time argument
