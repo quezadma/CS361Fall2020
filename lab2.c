@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,54 +18,71 @@ struct msg {
     uint32_t id;
     char now[200];    
     char data[36];
-}
+};
 
 int main (int argc, char *argv[])
 {
-    char *name = "/cs361lab2";
-    struct msg *m;
-    mqd_t mqd = open("/cs361lab2", O_CREAT | O_RONLY, 0600, NULL);
+	
+	
+	char correctMagic[8] = "cs361lab";
+	int magicCorrect = 1;		//set to 1 if magic array is correct, set to 0 if not
+    char *name = argv[1];		//name of queue to receive messages from specified in the command line
+    struct msg *m;				//struct to store message from queue
+	struct mq_attr attr;		//struct to store attributes of queue
+	
+    mqd_t mqd = mq_open(name, O_RDONLY, 0600, NULL); 	//opening queue
 
+	//exit if there's an error opening queue
     if(mqd < 0)
     {
-        fprintf("MQD UNSUCCESSFUL", strerror(errno));
+        printf("MQD UNSUCCESSFUL: %s", strerror(errno));
         exit(1);
     }
    
-    struct mq_attr attr;
-    if(mq_getattr (mqd, &attr) == -1)
+    
+	//exit if there's an error getting attributes
+    if(mq_getattr(mqd, &attr) == -1)
     {
-        fprintf("Error with attr", strerror(errno));
+        printf("Error with attr: %s", strerror(errno));
     }
-
-    char *buffer = calloc (attr.mq_msgsize, 1);
+	
+	//create memory message
+    char *buffer = calloc(attr.mq_msgsize, 1);
     ssize_t bytes;
 
-    if((bytes = mq_receive (mqd, buffer, attr.mq_msgsize, NULL)) ! = -1)
+	//receive message, exit if failure
+    if( (bytes = mq_receive(mqd, buffer, attr.mq_msgsize, NULL)) != -1)
     {
         m = (struct msg *) buffer;
     }
     else
     {
-        fprintf("Problem receiving message", sterror(errno));
+        printf("Problem receiving message: %s", strerror(errno));
         exit(1);
     }
 
-
-    //still need to find out where we get the arguments for the Queue output
-    fprintf("Queue %s:\n\t Flags:\t%s\n\tMax messagesses:\t%d\n\tMax size:\t%d\n\tCurrent messages:%\td", name, attr.mq_flags, attr.mq_maxmsg, attr.mq_msgsize, attr.mq_curmsgs);
+	//print queue attributes
+    printf("Queue %s:\n\tFlags:\t%ld\n\tMax messages:\t%ld\n\tMax size:\t%ld\n\tCurrent messages:\t%ld\n\n", name, attr.mq_flags, attr.mq_maxmsg, attr.mq_msgsize, attr.mq_curmsgs);
     
- 
-    //still need to get arguments from struct. need the time argument
-    //if(m->magic )
-    //{
-        fprintf("Receieved message (%d bytes):\n\tMagic: %c\n\tID: %d\n\tTime: %s\n\tData: %s", bytes, m->magic, m->id, m->data);
-    //}
-    //else
-    //{
+	//check if magic array is correct
+	for(int i = 0; i < 8; i++) {
+		if (m->magic[i] != correctMagic[i])
+		{
+			magicCorrect = 0;
+			break;
+		}
+	}
+	
+	
+	//If magicCorrect flag hasn't been set to 0, then output message contents. Otherwise, print output for an invalid message.
+    if(magicCorrect == 1) {
+       printf("Receieved message (%ld bytes):\n\tMagic: %s\n\tID: %d\n\tTime: %s\n\tData: %s", bytes, "cs361lab", m->id, m->now, m->data);
+    }
+    else
+    {
         //output for invalid message
-        //fprintf("Receieved message (%d bytes):\n\tInvalid message", bytes);
-    //}
+       printf("Receieved message (%ld bytes):\n\tInvalid message", bytes);
+    }
 
     free(buffer);
     mq_close(mqd);
