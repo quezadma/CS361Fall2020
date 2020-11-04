@@ -1,4 +1,4 @@
-//Project 3
+//Lab 2
 //Max Forbang and Martin Quezada
 //This work abides by the JMU Honor Code.
 
@@ -21,7 +21,7 @@ struct msg {
 
 int main (int argc, char *argv[])
 {
-    struct msg m;
+    struct msg *m;
     mqd_t mqd = open("/cs361lab2", O_CREAT | O_RONLY, 0600, NULL);
 
     if(mqd < 0)
@@ -30,29 +30,42 @@ int main (int argc, char *argv[])
         exit(1);
     }
    
-        struct mq_attr attr;
-    char *buffer = calloc (attr.mq_msgsize, 1);
-
-    if((mq_receive (mqd, buffer, attr.mq_msgsize, NULL)) ! = -1)
+    struct mq_attr attr;
+    if(mq_getattr (mqd, &attr) == -1)
     {
-        struct msg *m = (struct msg *) buffer;
-        //retrieve message fields here
+        fprintf("Error with attr", strerror(errno));
+    }
+
+    char *buffer = calloc (attr.mq_msgsize, 1);
+    ssize_t bytes;
+
+    if((bytes = mq_receive (mqd, buffer, attr.mq_msgsize, NULL)) ! = -1)
+    {
+        m = (struct msg *) buffer;
+    }
+    else
+    {
+        fprintf("Problem receiving message", sterror(errno));
+        exit(1);
     }
 
 
     //still need to find out where we get the arguments for the Queue output
-    fprintf("Queue %s:\n\t Flags:\t%s\n\tMax messagesses:\t%d\n\tMax size:\t%d\n\tCurrent messages:%\td");
+    fprintf("Queue %s:\n\t Flags:\t%s\n\tMax messagesses:\t%d\n\tMax size:\t%d\n\tCurrent messages:%\td", );
     
-    
-    //still need to get arguments from struct
-    fprintf("Receieved message (%d bytes):\n\tMagic: %c\n\tID: %d\n\tTime: %s\n\tData: %s");
-    
-    
-    
-    //output for invalid message
-    fprintf("Receieved message (%d bytes):\n\tInvalid message");
+ 
+    //still need to get arguments from struct. need the time argument
+    //if(m->magic )
+    //{
+        fprintf("Receieved message (%d bytes):\n\tMagic: %c\n\tID: %d\n\tTime: %s\n\tData: %s", bytes, m->magic, m->id, m->data);
+    //}
+    //else
+    //{
+        //output for invalid message
+        //fprintf("Receieved message (%d bytes):\n\tInvalid message", bytes);
+    //}
 
-    
+    free(buffer);
     mq_close(mqd);
 }
 
