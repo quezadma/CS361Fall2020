@@ -122,7 +122,11 @@ int main(int argc, char *argv[])
             while(1) {
 
                 // receive the next task message here; you must read into recv_buffer
-                mq_receive(tasks_mqd, recv_buffer, sizeof(recv_buffer), NULL);                
+                if( mq_receive(tasks_mqd, recv_buffer, sizeof(recv_buffer), NULL) < 0)
+                {
+                    printf("Failed to receive task message here: %s", strerror(errno));
+                    exit(1);
+                }                 
 
 
                 // cast the received message to a struct task
