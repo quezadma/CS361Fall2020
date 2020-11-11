@@ -185,7 +185,11 @@ int main(int argc, char *argv[])
 #endif
 
                         // implement the terminate task logic here
-
+                        free(tasks_buffer);
+                        free(results_buffer);
+                  
+                        mq_close(tasks_mqd);
+                        mq_close(results_mqd);
                         exit(0);
                 }
             }
