@@ -26,6 +26,7 @@ Honor code statement:
 int main(int argc, char *argv[])
 {
     int input_fd;
+    int classification_fd;
     pid_t pid;
     off_t file_size;
     mqd_t tasks_mqd, results_mqd; // message queue descriptors
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
                 {
                     printf("Failed to receive task message here: %s", strerror(errno));
                     exit(1);
-                }                 
+                }                
 
 
                 // cast the received message to a struct task
@@ -141,6 +142,16 @@ int main(int argc, char *argv[])
                         // you must retrieve the data for the specified cluster
                         // and store it in cluster_data before executing the
                         // code below
+
+                       classification_fd = open(CLASSIFICATION_FILE, O_RDONLY);
+		 
+                        if (classification_fd < 0) 
+                        {
+                            printf("Error opening file \"%s\": %s\n", "classificiation", strerror(errno));
+                            return 1;
+                        }
+    
+	lseek(classification_fd, 0, SEEK_SET);	//Seek to beginning of classification file	
 
                         // Classification code
                         classification = TYPE_UNCLASSIFIED;
@@ -209,6 +220,41 @@ int main(int argc, char *argv[])
     // supervisor process. You must use the tasks_mqd and results_mqd
     // variables for this purpose
 
+    //opening tasks mqd
+    tasks_mqd = mq_open ( tasks_mq_name, O_RDONLY, 0600, NULL);
+
+    if( tasks_mqd < 0)
+    {
+        printf("TASKS MQD UNSUCCESSFUL: %s", strerror(errno));
+        exit(1);
+    }
+
+    if(mq_getattr(tasks_mqd, &tasks_attr) == -1)
+    {
+        printf("Error with attr: %s", strerror(errno));
+    }
+    
+    char *tasks_buffer = calloc (tasks_attr.mq_msgsize, 1);
+    ssize_t tasks_bytes;
+
+    //opening results mqd
+    results_mqd = mq_open( results_mq_name, O_CREAT, 0600, NULL);
+
+    if( results_mqd < 0)
+    {
+        printf("RESULTS MQD UNSUCCESSFUL: %s", strerror(errno));
+        exit(1);
+    }
+
+
+    if(mq_getattr(results_mqd, &results_attr) == -1)
+    {
+        printf("Error with attr: %s", strerror(errno));
+    }
+
+    char *results_buffer = calloc (results_attr.mq_msgsize, 1);
+    ssize_t results_bytes;
+
     // At this point, the queues must be open
 #ifdef GRADING // do not delete this or you will lose points
     test_mqdes(tasks_mqd, "Tasks", getpid());
@@ -216,6 +262,14 @@ int main(int argc, char *argv[])
 #endif
 
     // Implement Phase 1 here
+
+
+    //open classification file
+    classification_fd = open(CLASSIFICATION_FILE, O_WRONLY | O_CREAT, 0600);
+    if (classification_fd < 0) {
+        printf("Error creating file \"%s\": %s\n", CLASSIFICATION_FILE, strerror(errno));
+        return 1;
+    }
 
     // End of Phase 1
 
