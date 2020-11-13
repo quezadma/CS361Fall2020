@@ -312,10 +312,15 @@ int main(int argc, char *argv[])
 				
 				//assign task struct attributes and send to task queue
 				struct task currentTask;
-                currentTask.task_type = classification;				
+                currentTask.task_type = TASK_CLASSIFY;				
 				currentTask.task_cluster = start_cluster + j;
                 //currentTask.task_filename = "argv[1]";//for sure wrong
-                mq_send(tasks_mqd, &currentTask, sizeof(currentTask), 0);
+
+                if(mq_send(tasks_mqd, &currentTask, sizeof(currentTask), 0) == -1)
+                {
+                    printf("error sending tasks from supervisor %s", strerror(errno));
+                    exit(1);
+                }
             }
 
     // End of Phase 1
@@ -342,6 +347,27 @@ int main(int argc, char *argv[])
 #endif
 
     // Implement Phase 3 here
+    for (int i = 0; i < NUM_PROCESSES; i++) 
+    {
+        struct task termTask;
+        termTask.task_type = TASK_TERMINATE;
+        //termTask.task_cluster = 0;    //not sure if this is needed
+        //termTask.task_filename = "not sure";  //not sure if this is needed
+
+        if(mq_send(tasks_mqd, &termTask, sizeof(termTask), 0) == -1)
+        {
+            printf("error sending term tasks from supervisor %s", strerror(errno));
+            exit(1);
+        }
+    }
+    
+    wait();
+
+
+    close(input_fd);
+
+    mq_close(tasks_mqd);
+    mq_close(results_mqd);
 
     return 0;
 };
