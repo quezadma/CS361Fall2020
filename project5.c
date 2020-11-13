@@ -26,7 +26,8 @@ Honor code statement:
 int main(int argc, char *argv[])
 {
     int input_fd;
-    int classification_fd;
+    int classification_fd; //might not be needed
+    unsigned char classification; //might not be needed
     pid_t pid;
     off_t file_size;
     mqd_t tasks_mqd, results_mqd; // message queue descriptors
@@ -143,15 +144,9 @@ int main(int argc, char *argv[])
                         // and store it in cluster_data before executing the
                         // code below
 
-                       classification_fd = open(CLASSIFICATION_FILE, O_RDONLY);
-		 
-                        if (classification_fd < 0) 
-                        {
-                            printf("Error opening file \"%s\": %s\n", "classificiation", strerror(errno));
-                            return 1;
-                        }
+
     
-	lseek(classification_fd, 0, SEEK_SET);	//Seek to beginning of classification file	
+	
 
                         // Classification code
                         classification = TYPE_UNCLASSIFIED;
@@ -198,7 +193,9 @@ int main(int argc, char *argv[])
                         // implement the terminate task logic here
                         free(tasks_buffer);
                         free(results_buffer);
-                  
+
+                        close(input_fd);
+
                         mq_close(tasks_mqd);
                         mq_close(results_mqd);
                         exit(0);
@@ -262,14 +259,64 @@ int main(int argc, char *argv[])
 #endif
 
     // Implement Phase 1 here
+    int start_cluster = 0;
+    char cluster_data[CLUSTER_SIZE];
+    
+    lseek(input_fd, start_cluster * num_clusters, SEEK_SET);
+
+            for(int j = 0; j < num_clusters; j++)
+            {
+				read(input_fd, &cluster_data, CLUSTER_SIZE);
+				classification = TYPE_UNCLASSIFIED;
+        
+		
+				//Code from project 3
+				
+				//JPG CODE
+				if(has_jpg_header(cluster_data) != 0) {
+					if(has_jpg_footer(cluster_data) != 0){
+						classification = TYPE_IS_JPG | TYPE_JPG_HEADER | TYPE_JPG_FOOTER; //JHF
+					}
+					else {
+						classification = TYPE_IS_JPG | TYPE_JPG_HEADER;		//JHEADER
+					}
+				}
+				else if(has_jpg_footer(cluster_data) != 0) 
+				{
+					classification = TYPE_IS_JPG | TYPE_JPG_FOOTER;		//JFOOTER
+					
+				}
+				else if(has_jpg_body(cluster_data) != 0) {
+					classification = TYPE_IS_JPG; 		//JONLY
+				}
 
 
-    //open classification file
-    classification_fd = open(CLASSIFICATION_FILE, O_WRONLY | O_CREAT, 0600);
-    if (classification_fd < 0) {
-        printf("Error creating file \"%s\": %s\n", CLASSIFICATION_FILE, strerror(errno));
-        return 1;
-    }
+				//HTML CODE
+				if(has_html_header(cluster_data) != 0) {
+					if(has_html_footer(cluster_data) != 0){
+						classification = TYPE_IS_HTML | TYPE_HTML_HEADER | TYPE_HTML_FOOTER; //HHF
+					}
+					else {
+						classification = TYPE_IS_HTML | TYPE_HTML_HEADER;		//HHEADER
+					}
+				}
+				else if(has_html_footer(cluster_data) != 0) 
+				{
+					classification = TYPE_IS_HTML | TYPE_HTML_FOOTER;		//HFOOTER
+					
+				}
+				else if(has_html_body(cluster_data) != 0) {
+					classification = TYPE_IS_HTML; 		//HONLY
+				}
+				
+				
+				//assign task struct attributes and send to task queue
+				struct task currentTask;
+                currentTask.task_type = classification;				
+				currentTask.task_cluster = start_cluster + j;
+                //currentTask.task_filename = "argv[1]";//for sure wrong
+                mq_send(tasks_mqd, &currentTask, sizeof(currentTask), 0);
+            }
 
     // End of Phase 1
 
