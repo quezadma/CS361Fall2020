@@ -366,6 +366,9 @@ int main(int argc, char *argv[])
 
     close(input_fd);
 
+    mq_unlink(tasks_mq_name);
+    mq_unlink(results_mq_name);
+
     mq_close(tasks_mqd);
     mq_close(results_mqd);
 
