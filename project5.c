@@ -181,6 +181,12 @@ int main(int argc, char *argv[])
 #endif
 
                         // implement the map task logic here
+                        classification_fd = open(CLASSIFICATION_FILE, O_WRONLY | O_CREAT, 0600);
+                        if (classification_fd < 0) 
+                        {
+                            printf("Error creating file \"%s\": %s\n", CLASSIFICATION_FILE, strerror(errno));
+                            exit(1);
+                        }
 
                         break;
 
