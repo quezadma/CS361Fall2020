@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
             // variables for this purpose
 
             //opening tasks mqd
-            tasks_mqd = mq_open ( tasks_mq_name, O_RDONLY, 0600, NULL);
+            tasks_mqd = mq_open ( tasks_mq_name, O_RDONLY | O_CREAT, 0600, NULL);
 
             if( tasks_mqd < 0)
             {
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     // variables for this purpose
 
     //opening tasks mqd
-    tasks_mqd = mq_open ( tasks_mq_name, O_RDONLY, 0600, NULL);
+    tasks_mqd = mq_open ( tasks_mq_name, O_RDONLY | O_CREAT, 0600, NULL);
 
     if( tasks_mqd < 0)
     {
