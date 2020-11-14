@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 				currentTask.task_cluster = start_cluster + j;
                 //currentTask.task_filename = "argv[1]";//for sure wrong
 
-                if(mq_send(tasks_mqd, &currentTask, sizeof(currentTask), 0) == -1)
+                if(mq_send(tasks_mqd, (const char *)&currentTask, sizeof(struct task), 0) == -1)
                 {
                     printf("error sending tasks from supervisor %s", strerror(errno));
                     exit(1);
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
         //termTask.task_cluster = 0;    //not sure if this is needed
         //termTask.task_filename = "not sure";  //not sure if this is needed
 
-        if(mq_send(tasks_mqd, &termTask, sizeof(termTask), 0) == -1)
+        if(mq_send(tasks_mqd, (const char *)&termTask, sizeof(struct task), 0) == -1)
         {
             printf("error sending term tasks from supervisor %s", strerror(errno));
             exit(1);
